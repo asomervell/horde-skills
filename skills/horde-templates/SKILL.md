@@ -26,7 +26,7 @@ horde validate my-template --repo /path/to/repo --objective "a realistic objecti
 ```toml
 name = "parallel-feature"
 version = "1.0.0"
-inputs = ["outcome"]
+inputs = ["task"]
 
 [outputs]
 result = "verify.result"
@@ -36,7 +36,7 @@ id = "api"
 role = "worker"
 scope = ["src/api"]
 tools = ["read_file", "search", "write_file", "apply_patch", "command"]
-instructions = "Implement the API for {{outcome}}. Coordinate interfaces with the UI worker, test and commit."
+instructions = "Implement the API for {{task}}. Coordinate interfaces with the UI worker, test and commit."
 acceptance = ["The API endpoint exists and its tests pass"]
 
 [[steps]]
@@ -44,7 +44,7 @@ id = "ui"
 role = "worker"
 scope = ["src/ui"]
 tools = ["read_file", "search", "write_file", "apply_patch", "command"]
-instructions = "Implement the UI for {{outcome}}. Coordinate interfaces with the API worker, test and commit."
+instructions = "Implement the UI for {{task}}. Coordinate interfaces with the API worker, test and commit."
 
 [[steps]]
 id = "verify"
@@ -75,7 +75,7 @@ includes itself.
 | `environment` | none | Managed app environment block for an `environment` step |
 | `template` | none | Nested template to invoke |
 | `inputs` | `{}` | Inputs passed to a nested template |
-| `when` | none | `{ task = "...", status = "..." }` condition on a dependency's terminal status |
+| `when` | none | `{ step = "...", status = "..." }` condition on a dependency's terminal status |
 | `attempts` | `1` | Bounded retries; each attempt keeps separate evidence |
 
 Native tools available to an `agent` step on the Tuara executor: `read_file`,
@@ -83,7 +83,7 @@ Native tools available to an `agent` step on the Tuara executor: `read_file`,
 
 ## Substitution
 
-- `{{name}}` substitutes a template input. `{{outcome}}` is the submitted objective.
+- `{{name}}` substitutes a template input. `{{task}}` is the submitted objective.
 - `${step.field}` supplies a named output from a **direct** dependency. A reference
   to a step you do not depend on is rejected.
 - Nested templates namespace their steps, and compiler-generated references and
@@ -120,7 +120,7 @@ scope = ["."]
 tools = ["read_file", "search", "write_file", "command"]
 instructions = "Read the failed check evidence in context, fix the cause, test, and commit."
 [steps.when]
-task = "check"
+step = "check"
 status = "failed"
 
 [[steps]]
@@ -152,10 +152,10 @@ events. This is a configured change of executor, not a silent model alias.
 
 ## Evolving a workflow at runtime
 
-- `add_tasks` appends a validated revision from the caller without rewriting
+- `add_steps` appends a validated revision from the caller without rewriting
   earlier attempts.
-- `propose_tasks` lets an active planner step propose parallel or dependent steps;
-  the runtime validates the graph and inserts it before that planning task's
+- `propose_steps` lets an active planner step propose parallel or dependent steps;
+  the runtime validates the graph and inserts it before that planning step's
   pending successors.
 
 Use these to add verification after inspecting evidence, rather than replaying

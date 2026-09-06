@@ -18,7 +18,7 @@ Authenticate `gh` through its own credential store first. The configured
 
 ## What a delivery step does
 
-1. Pushes the `outcome/TASK_ID` branch.
+1. Pushes the `horde/TASK_ID` branch.
 2. Finds or creates its pull request against `base`.
 3. Watches the PR checks.
 4. Compares the verified head before merging, then merges.

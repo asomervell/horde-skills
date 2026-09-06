@@ -42,29 +42,6 @@ cargo install --path . --locked
 A source build has no embedded release verification key, so `horde update` will
 report that it cannot verify updates. That is expected.
 
-## Upgrading a pre-rename installation
-
-Horde was called Outcome. If `~/.local/bin/outcome` exists and `horde` does not:
-
-```sh
-~/.local/bin/outcome update
-horde --version
-```
-
-This adds `~/.local/bin/horde` and reuses existing configuration, data, and service
-identity. The installer refuses to create a second managed installation beside the
-old one.
-
-Compatibility rules worth knowing:
-
-- Both `HORDE_*` and legacy `OUTCOME_*` environment variables are read; `HORDE_*`
-  wins.
-- `~/.config/outcome/`, `~/.local/share/outcome/`, `.outcome.toml`, and
-  `.outcome/templates` are used only when the `horde` equivalents do not exist.
-  If both exist, the Horde path wins. Do not create an empty Horde directory while
-  intending to reuse legacy data.
-- The integrated result branch is still named `outcome/TASK_ID`.
-
 ## Running the daemon
 
 ```sh
@@ -162,5 +139,5 @@ again whenever you suspect the runtime rather than the model.
 | Socket or path errors | Data directory path too long, or a stale daemon. Shorten `--data-dir`, or `horde stop` then `horde start`. |
 | Provider auth failures in workers | The key was set in your shell, not the daemon's environment. Export it before `horde start`, or put it in `credentials.env` for a service install. |
 | Native model rejected | Horde verifies the exact configured model identifier against `/models` and never substitutes an alias. Fix the identifier. |
-| Outcome blocked after a restart | An uncertain attempt. Reconcile the worker, then resume. See `tasks.md`. |
+| Task blocked after a restart | An uncertain attempt. Reconcile the worker, then resume. See `tasks.md`. |
 | `horde update` says it cannot verify | Source build with no embedded release key, which is correct behavior. Use the official installer for managed updates. |

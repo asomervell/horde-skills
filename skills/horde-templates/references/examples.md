@@ -6,7 +6,7 @@ All of these go in `.horde/templates/*.toml`. Validate each one with
 ## The built-ins, and what they assume
 
 **`local-implementation`** — the default. Three steps: `plan` (planner role,
-read-only tools, may call `propose_tasks`), `implement` (worker, scope `["."]`,
+read-only tools, may call `propose_steps`), `implement` (worker, scope `["."]`,
 3 attempts), `review` (reviewer, scope `["."]`, 3 attempts, repairs concrete
 defects and fails if acceptance is unmet). Its output alias is `review.result`.
 
@@ -31,7 +31,7 @@ the nested template's terminal steps.
 ```toml
 name = "feature-with-checks"
 version = "1.0.0"
-inputs = ["outcome"]
+inputs = ["task"]
 
 [outputs]
 result = "build.result"
@@ -39,7 +39,7 @@ result = "build.result"
 [[steps]]
 id = "build"
 template = "local-implementation"
-inputs = { outcome = "{{outcome}}" }
+inputs = { task = "{{task}}" }
 
 [[steps]]
 id = "lint"
@@ -61,7 +61,7 @@ on a template-inclusion step. Put conditional execution on the child steps.
 ```toml
 name = "parallel-feature"
 version = "1.0.0"
-inputs = ["outcome"]
+inputs = ["task"]
 
 [outputs]
 result = "verify.result"
@@ -71,7 +71,7 @@ id = "api"
 role = "worker"
 scope = ["src/api"]
 tools = ["read_file", "search", "write_file", "apply_patch", "command"]
-instructions = "Implement the API for {{outcome}}. Coordinate interfaces with the UI worker through messages, test and commit."
+instructions = "Implement the API for {{task}}. Coordinate interfaces with the UI worker through messages, test and commit."
 acceptance = ["The endpoint is implemented", "API tests pass"]
 
 [[steps]]
@@ -79,7 +79,7 @@ id = "ui"
 role = "worker"
 scope = ["src/ui"]
 tools = ["read_file", "search", "write_file", "apply_patch", "command"]
-instructions = "Implement the UI for {{outcome}}. Coordinate interfaces with the API worker through messages, test and commit."
+instructions = "Implement the UI for {{task}}. Coordinate interfaces with the API worker through messages, test and commit."
 acceptance = ["The UI renders the new data", "UI tests pass"]
 
 [[steps]]
@@ -113,7 +113,7 @@ scope = ["."]
 tools = ["read_file", "search", "write_file", "command"]
 instructions = "Read the failed check evidence in context, fix the cause, test, and commit."
 [steps.when]
-task = "check"
+step = "check"
 status = "failed"
 
 [[steps]]
@@ -133,7 +133,7 @@ you do not `need` is rejected.
 id = "plan"
 role = "planner"
 tools = ["read_file", "search", "command"]
-instructions = "Inspect the repository and plan this outcome: {{outcome}}. Do not edit files. Return a concrete implementation plan."
+instructions = "Inspect the repository and plan this task: {{task}}. Do not edit files. Return a concrete implementation plan."
 acceptance = ["A concrete implementation plan was produced"]
 
 [[steps]]
@@ -141,7 +141,7 @@ id = "implement"
 needs = ["plan"]
 scope = ["."]
 tools = ["read_file", "search", "write_file", "apply_patch", "command"]
-instructions = "Implement {{outcome}}. Follow the dependency plan: ${plan.result}. Check messages before editing. Run relevant tests and commit."
+instructions = "Implement {{task}}. Follow the dependency plan: ${plan.result}. Check messages before editing. Run relevant tests and commit."
 attempts = 3
 ```
 
@@ -161,7 +161,7 @@ risk = "string"
 ```toml
 name = "app-test"
 version = "1.0.0"
-inputs = ["outcome"]
+inputs = ["task"]
 
 [[steps]]
 id = "install"
@@ -223,8 +223,8 @@ needs code changes belongs in an explicit repair branch.
 | `unknown template X` | Not in `.horde/templates/` and not a built-in |
 | `missing input X for Y` | The template declares `inputs` that the caller did not supply |
 | `recursive template inclusion` | A template includes itself, directly or transitively |
-| `unknown output task X` | `[outputs]` references a step id that does not exist at that level |
-| `output must reference task.field` | An `[outputs]` value with no dot |
+| `unknown output step X` | `[outputs]` references a step id that does not exist at that level |
+| `output must reference step.field` | An `[outputs]` value with no dot |
 | `put conditional execution on child steps` | `when` on a template-inclusion step |
 | `unconfigured executor role X` (at submit) | A step's `role` has no `[executors.X]` entry in the merged settings |
 | unknown field errors | A misspelled key. Templates reject unknown fields |

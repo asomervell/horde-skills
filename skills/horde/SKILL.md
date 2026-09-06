@@ -25,10 +25,10 @@ small edit and wrong for everything else. Horde fixes five specific failures:
 2. **Parallel agents corrupt each other.** Every worker gets its own worktree and
    must acquire an exclusive claim on the paths it edits. Overlapping claims are
    rejected with ownership evidence. Integration into the shared result is
-   serialized per outcome.
+   serialized per task.
 3. **A crash silently replays side effects.** Horde never assumes an interrupted
    model call, shell command, merge, or GitHub write did nothing. It marks the
-   attempt uncertain, blocks the outcome, and requires explicit reconciliation.
+   attempt uncertain, blocks the task, and requires explicit reconciliation.
 4. **One model does everything.** Roles (`planner`, `worker`, `reviewer`, and any
    role you name) each map to an executor: Codex CLI, Claude Code CLI, a Tuara
    API model, or a simulated no-op. Mix them per step, with configured fallback
@@ -76,9 +76,6 @@ installer asks whether to start Horde at login, and that prompt falls back to
 reading `/dev/tty` when stdin is not a terminal, which is exactly what
 `curl | bash` is. An agent tool call blocks there with no way to answer. Pass the
 flag and the question never happens.
-
-If the installer says an older installation owns the runtime, see the migration
-note in `references/setup.md`.
 
 Boot startup stays a separate, reversible step the user opts into later:
 
@@ -137,7 +134,7 @@ is sound and any later failure is configuration or the model, not Horde.
 
 Confirm each step succeeded before starting the next, and report what actually
 happened. See `references/setup.md` for MCP wiring per agent, data directories,
-migration from a pre-rename installation, and troubleshooting.
+and troubleshooting.
 
 ## The loop
 
@@ -152,7 +149,7 @@ Rules that matter:
 
 - The repository must have an initial commit and a configured Git author.
 - Coding happens in separate worktrees. Your checkout stays on its branch.
-- The integrated result lands on branch `outcome/TASK_ID`. Find it with
+- The integrated result lands on branch `horde/TASK_ID`. Find it with
   `git worktree list`. Diff it before you trust it.
 - Nothing is pushed and no PR is opened unless delivery is explicitly enabled.
 - Settings are pinned at submission. Editing config later affects new tasks only.
@@ -176,7 +173,7 @@ horde resume TASK_ID
 
 ## After a crash
 
-A hard daemon crash marks running attempts uncertain and blocks their outcomes.
+A hard daemon crash marks running attempts uncertain and blocks their tasks.
 This is deliberate. Do not try to force it forward.
 
 1. `horde inspect TASK_ID` to find the uncertain attempt and its worker.
@@ -184,7 +181,7 @@ This is deliberate. Do not try to force it forward.
    PRs, running app processes).
 3. Stop orphaned processes. `reconcile_worker` refuses while a recorded process is
    still alive.
-4. `horde call reconcile_worker '{"outcome":"TASK_ID","worker":"WORKER_ID"}'`
+4. `horde call reconcile_worker '{"task":"TASK_ID","worker":"WORKER_ID"}'`
 5. `horde resume TASK_ID`
 
 Claims survive the crash and stay with their owner until reconciled and released.
@@ -195,7 +192,7 @@ Read the reference only when you need it.
 
 | Need | File |
 | --- | --- |
-| Install, MCP wiring per agent, boot service, data dirs, migration, troubleshooting | `references/setup.md` |
+| Install, MCP wiring per agent, boot service, data directories, troubleshooting | `references/setup.md` |
 | Settings TOML, executor roles, auth modes, credential broker, concurrency, limits | `references/configuration.md` |
 | Task lifecycle, results, revisions, artifacts, knowledge, recovery in depth | `references/tasks.md` |
 | Bounded delegation trees, inherited context, question routing, child acceptance | `references/delegation.md` |
@@ -205,7 +202,7 @@ Read the reference only when you need it.
 | Every operation, its arguments, and whether a worker token may call it | `references/operations.md` |
 
 Related skills: `horde-templates` to author workflow templates, `horde-worker`
-for an agent running as a worker inside a Horde outcome.
+for an agent running as a worker inside a Horde task.
 
 ## Non-negotiables
 

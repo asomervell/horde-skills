@@ -93,7 +93,7 @@ executor_roles = ["planner", "worker", "reviewer"]
 [profiles.cluster]
 provider = "kubernetes"
 context = "my-cluster"
-namespace = "outcome"
+namespace = "task"
 image = "ghcr.io/asomervell/horde@sha256:REPLACE_WITH_RELEASE_DIGEST"
 concurrency = 4
 
@@ -134,7 +134,7 @@ not blindly issue a second create. Inspect the provider, then adopt the exact
 owned resource:
 
 ```sh
-horde runtime reconcile worker-1 --resource outcome-worker-1 --request-id reconcile-worker-1
+horde runtime reconcile worker-1 --resource task-worker-1 --request-id reconcile-worker-1
 ```
 
 Reconciliation verifies the ownership label. It does not certify the effects of

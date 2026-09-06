@@ -4,7 +4,7 @@ Everything here is callable with a worker token, as an MCP tool on the
 coordination bridge or as `horde call OPERATION 'JSON'` when the token is in the
 environment. `*` marks required fields.
 
-`outcome` and `worker` are supplied by your token. Do not pass a different value:
+`task` and `worker` are supplied by your token. Do not pass a different value:
 the RPC layer rejects it as a scope violation. Arguments beginning with `_` are
 rejected as reserved.
 
@@ -40,7 +40,7 @@ Not available to a worker token: `release_claims`, `reconcile_worker`, `integrat
 | `acknowledge_messages` | `ids[]`* |
 | `join_channel` | `channel`* |
 
-`destination` is a worker id, `group:NAME`, or `outcome`. Broadcast recipients are
+`destination` is a worker id, `group:NAME`, or `task`. Broadcast recipients are
 snapshotted at send time. Delivery is at-least-once until you acknowledge
 explicitly. A separate notification watermark stops an already-delivered wakeup
 from invoking a model twice.
@@ -49,14 +49,14 @@ from invoking a model twice.
 
 | Operation | Arguments |
 | --- | --- |
-| `put_artifact` | `name`*, `content`*, `inputs{}`, `task` |
+| `put_artifact` | `name`*, `content`*, `inputs{}`, `step` |
 | `get_artifact` | `hash`* |
 | `reuse_artifact` | `name`*, `inputs{}`* |
-| `add_knowledge` | `kind`*, `content`*, `provenance{}`*, `inputs{}`, `task` |
+| `add_knowledge` | `kind`*, `content`*, `provenance{}`*, `inputs{}`, `step` |
 | `knowledge` | none |
 | `link_knowledge` | `source`*, `target`*, `relation`* |
 
-`verified: true` is rejected for workers. `task` may only name your own task.
+`verified: true` is rejected for workers. `step` may only name your own step.
 
 Artifacts are addressed by SHA-256, synced before their database reference commits,
 and checked on retrieval. `reuse_artifact` returns a verified prior result only
@@ -66,11 +66,11 @@ when the `inputs` fingerprint matches exactly.
 
 | Operation | Arguments |
 | --- | --- |
-| `delegate_outcome` | `id`*, `objective`*, `template`, `peer`, `bundles[]` |
+| `delegate_task` | `id`*, `objective`*, `template`, `peer`, `bundles[]` |
 | `list_children` | none |
 | `integrate_child` | `child`*, `validation[]`* |
 | `environments` | none |
-| `propose_tasks` | `steps`* — planner role only; inserted before the planning task's pending successors |
+| `propose_steps` | `steps`* — planner role only; inserted before the planning step's pending successors |
 
 ## Native tools
 

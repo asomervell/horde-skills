@@ -3,7 +3,7 @@
 Configure the application once, then inherit that setup through the task tree.
 These bundles are for the software being built and tested. Provider API keys stay
 in executor configuration and the credential broker, and Horde rejects reserved
-`HORDE_` and `OUTCOME_` names inside a bundle.
+`HORDE_` names inside a bundle.
 
 ## Named private bundles
 
@@ -27,14 +27,14 @@ secret_bundles = ["app"]
 ```
 
 A root binds bundle names and content versions. Children inherit whole bundles by
-default; `delegate_outcome` can narrow with `"bundles": []` or a subset, never
+default; `delegate_task` can narrow with `"bundles": []` or a subset, never
 widen. SQLite stores names and hashes, never values.
 
 Changing the source file fails the pinned version check until the caller
 explicitly refreshes:
 
 ```sh
-horde call refresh_bundles '{"outcome":"TASK_ID"}'
+horde call refresh_bundles '{"task":"TASK_ID"}'
 ```
 
 Existing descendants keep their own pinned versions. Refresh each intended
@@ -63,7 +63,7 @@ Save as `.horde/templates/app-test.toml`:
 ```toml
 name = "app-test"
 version = "1.0.0"
-inputs = ["outcome"]
+inputs = ["task"]
 
 [[steps]]
 id = "app"
@@ -82,7 +82,7 @@ readiness_seconds = 60
 ```sh
 horde validate app-test --repo /path/to/repo
 horde submit "Verify the running app" --repo /path/to/repo --template app-test
-horde call environments '{"outcome":"TASK_ID"}'
+horde call environments '{"task":"TASK_ID"}'
 ```
 
 `PORT` is an allocated ephemeral loopback port and `${PORT}` is expanded in start

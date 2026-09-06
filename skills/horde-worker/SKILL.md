@@ -19,12 +19,11 @@ it, use the `horde` skill instead.
 You are, if any of these is true:
 
 - A `coordination` MCP server is configured for you with Horde tools.
-- `HORDE_WORKER_TOKEN` (or legacy `OUTCOME_WORKER_TOKEN`) is set in your
-  environment.
+- `HORDE_WORKER_TOKEN` is set in your environment.
 - Your instructions arrived with an objective, acceptance criteria, a write scope,
   and a worktree path.
 
-Your token limits you to worker-scoped operations. It also forces `outcome` and
+Your token limits you to worker-scoped operations. It also forces `task` and
 `worker` to your own identity, so you cannot act as another worker even by
 accident. See `references/operations.md`.
 
@@ -111,7 +110,7 @@ read_messages        { }
 acknowledge_messages { "ids": ["unique-client-message-id"] }
 ```
 
-- `destination` is a worker id, `group:NAME`, or `outcome`. Join a group with
+- `destination` is a worker id, `group:NAME`, or `task`. Join a group with
   `join_channel` first.
 - `id` is yours to choose and makes retries safe. Resending the same id with the
   same payload is a no-op; changing the payload under the same id is rejected.
@@ -147,7 +146,7 @@ If your assignment is genuinely several independent pieces, you can create bound
 children:
 
 ```
-delegate_outcome { "id": "export-v1", "objective": "Implement the export component",
+delegate_task { "id": "export-v1", "objective": "Implement the export component",
                    "template": "local-implementation" }
 list_children    { }
 integrate_child  { "child": "CHILD_ID", "validation": ["npm", "test"] }
@@ -163,7 +162,7 @@ relative to the recorded base and runs your `validation` command against the
 combined workspace. Conflicts and failed validation are not acceptance. You cannot
 finish until your children have current verified acceptance.
 
-A planner-role worker can also reshape its own workflow with `propose_tasks`; the
+A planner-role worker can also reshape its own workflow with `propose_steps`; the
 runtime validates the graph and inserts it before the planning task's pending
 successors.
 
@@ -176,14 +175,14 @@ successors.
 - Never mark your task done on the basis of what another worker or child said.
 - Never certify your own output as verified.
 - Report a failure as a failure, with the evidence. A blocked task with an honest
-  question is a better outcome than a green status over a broken change.
+  question is a better result than a green status over a broken change.
 
 ## Attaching an external agent or script
 
 To run your own harness as a Horde worker:
 
 ```sh
-horde call register_worker '{"outcome":"TASK_ID"}'
+horde call register_worker '{"task":"TASK_ID"}'
 # -> {"id":"WORKER_ID","token":"..."}
 ```
 

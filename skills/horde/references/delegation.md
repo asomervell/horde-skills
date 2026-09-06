@@ -22,13 +22,13 @@ reservation until reconciliation. This bounds expansion; it is not a distributed
 scheduler.
 
 ```sh
-horde call delegate_outcome '{
-  "outcome":"PARENT_ID",
+horde call delegate_task '{
+  "task":"PARENT_ID",
   "id":"export-v1",
   "objective":"Implement the export component",
   "template":"local-implementation"
 }'
-horde call list_children '{"outcome":"PARENT_ID"}'
+horde call list_children '{"task":"PARENT_ID"}'
 ```
 
 `id` is a stable request id used for deduplication. Retrying the exact same
@@ -46,9 +46,9 @@ task instructions accompany that contract, they do not replace it. A child worki
 on one component still knows what the caller actually asked for.
 
 ```sh
-horde call read_context '{"outcome":"CHILD_ID","after":0,"limit":25}'
+horde call read_context '{"task":"CHILD_ID","after":0,"limit":25}'
 horde call update_context '{
-  "outcome":"ROOT_ID",
+  "task":"ROOT_ID",
   "kind":"constraint",
   "content":"Never export email addresses",
   "provenance":"Original caller message 7"
@@ -62,7 +62,7 @@ sources stay retrievable and the original objective can never be superseded.
 
 Authoritative updates and answers advance the family context version. An attempt
 that started under an older version cannot have its result accepted. A completed
-task becomes blocked instead: add a fresh verification step with `add_tasks` and
+task becomes blocked instead: add a fresh verification step with `add_steps` and
 resume, rather than replaying completed implementation or delivery effects.
 
 Supporting facts belong in `add_knowledge` with their own provenance, verification
@@ -76,8 +76,8 @@ A worker calls `request_question` with `question` and optional `id`, `evidence`,
 immediate caller reads `pending_questions` and picks exactly one action:
 
 ```sh
-horde call answer_question '{"outcome":"CALLER_ID","question":"QUESTION_ID","answer":"Use CSV and omit identifying fields"}'
-horde call escalate_question '{"outcome":"CALLER_ID","question":"QUESTION_ID","commentary":"This changes the requested export contract"}'
+horde call answer_question '{"task":"CALLER_ID","question":"QUESTION_ID","answer":"Use CSV and omit identifying fields"}'
+horde call escalate_question '{"task":"CALLER_ID","question":"QUESTION_ID","commentary":"This changes the requested export contract"}'
 ```
 
 Escalation moves the same question up one level. Commentary stays separate; no
@@ -103,7 +103,7 @@ mapping from root task ids to chat threads.
 ## Acceptance stays with the parent
 
 ```sh
-horde call integrate_child '{"outcome":"PARENT_ID","child":"CHILD_ID","validation":["npm","test"]}'
+horde call integrate_child '{"task":"PARENT_ID","child":"CHILD_ID","validation":["npm","test"]}'
 ```
 
 A child success report is provisional. The parent imports the child's changes

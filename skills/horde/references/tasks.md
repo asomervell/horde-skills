@@ -13,7 +13,7 @@ horde submit "Migrate the auth module" --repo . --template nextjs
 The equivalent operation, which also accepts initial context records:
 
 ```sh
-horde call submit_outcome '{
+horde call submit_task '{
   "objective":"Add CSV export with tests",
   "repo":"/absolute/path",
   "template":"local-implementation",
@@ -42,7 +42,7 @@ keeps separate evidence.
 Each agent step gets a worker identity, a scoped token, and its own Git worktree.
 The worker registers its workspace, claims the paths it will edit, works, commits,
 and the runtime integrates its commits into the shared result. Integration is
-serialized per outcome with a file lock and a durable queue record.
+serialized per task with a file lock and a durable queue record.
 
 Built-in templates: `local-implementation` (plan, implement, review),
 `nextjs` (adds `npm ci`, tests, production build on the integrated worktree),
@@ -66,8 +66,8 @@ For a bot or long-lived agent, use durable event receipts instead of polling fro
 zero:
 
 ```sh
-horde call events '{"outcome":"TASK_ID","after":0}'
-horde call ack_events '{"outcome":"TASK_ID","consumer":"my-agent","seq":42}'
+horde call events '{"task":"TASK_ID","after":0}'
+horde call ack_events '{"task":"TASK_ID","consumer":"my-agent","seq":42}'
 ```
 
 Receipts are per-consumer, durable, and monotonic. Acknowledging an event never
@@ -79,7 +79,7 @@ A worker that lacks required information raises a durable question and blocks on
 its own task. Independent branches keep running. `horde inspect` shows it, or:
 
 ```sh
-horde call pending_questions '{"outcome":"TASK_ID"}'
+horde call pending_questions '{"task":"TASK_ID"}'
 horde answer TASK_ID QUESTION_ID "Use CSV and omit identifying fields"
 ```
 
@@ -91,13 +91,13 @@ which invalidates results pinned to an older version. See `delegation.md`.
 
 ## Results
 
-The integrated result is on branch `outcome/TASK_ID`. Your original checkout is
+The integrated result is on branch `horde/TASK_ID`. Your original checkout is
 untouched and stays on its branch.
 
 ```sh
 git worktree list
-git log --oneline main..outcome/TASK_ID
-git diff main...outcome/TASK_ID
+git log --oneline main..horde/TASK_ID
+git diff main...horde/TASK_ID
 ```
 
 Worker worktrees are retained after completion so you can inspect what each one
@@ -110,15 +110,15 @@ acceptance steps passed, not that the change is correct for your intent.
 ## Changing a running workflow
 
 ```sh
-horde call add_tasks '{"outcome":"TASK_ID","steps":[ ... ]}'
+horde call add_steps '{"task":"TASK_ID","steps":[ ... ]}'
 ```
 
-`add_tasks` validates and appends a new workflow revision without rewriting earlier
+`add_steps` validates and appends a new workflow revision without rewriting earlier
 attempts. Use it to add a verification step after inspecting evidence, rather than
 replaying completed implementation or delivery work.
 
-A planner step running inside the task can call `propose_tasks` instead; the
-runtime validates the proposed graph and inserts it before the planning task's
+A planner step running inside the task can call `propose_steps` instead; the
+runtime validates the proposed graph and inserts it before the planning step's
 pending successors.
 
 ## Cancel, resume, and integration failures
@@ -135,7 +135,7 @@ acceptance. Worktrees are retained in every one of these cases.
 
 ## Recovery after a hard crash
 
-A hard daemon crash marks running attempts uncertain and blocks their outcomes.
+A hard daemon crash marks running attempts uncertain and blocks their tasks.
 Horde does not assume the interrupted model call, shell command, merge, or external
 write did nothing, and it will not replay them automatically.
 
@@ -143,7 +143,7 @@ write did nothing, and it will not replay them automatically.
 horde inspect TASK_ID
 # find the uncertain attempt and its worker id, inspect that worktree
 # stop any orphaned processes: reconcile refuses while a recorded PID is alive
-horde call reconcile_worker '{"outcome":"TASK_ID","worker":"WORKER_ID"}'
+horde call reconcile_worker '{"task":"TASK_ID","worker":"WORKER_ID"}'
 horde resume TASK_ID
 ```
 
@@ -162,9 +162,9 @@ commits, and verified on retrieval. Each link records its input fingerprint and
 verification status, so identical inputs can find a verified prior result:
 
 ```sh
-horde call put_artifact '{"outcome":"TASK_ID","name":"plan","content":"...","inputs":{"spec":"sha256:..."},"verified":true}'
-horde call reuse_artifact '{"outcome":"TASK_ID","name":"plan","inputs":{"spec":"sha256:..."}}'
-horde call get_artifact '{"outcome":"TASK_ID","hash":"..."}'
+horde call put_artifact '{"task":"TASK_ID","name":"plan","content":"...","inputs":{"spec":"sha256:..."},"verified":true}'
+horde call reuse_artifact '{"task":"TASK_ID","name":"plan","inputs":{"spec":"sha256:..."}}'
+horde call get_artifact '{"task":"TASK_ID","hash":"..."}'
 ```
 
 `inputs` is an object fingerprint of what produced the content. `reuse_artifact`
@@ -173,9 +173,9 @@ returns a verified artifact only when that fingerprint matches exactly.
 Knowledge records facts, decisions, and evidence with provenance and relationships:
 
 ```sh
-horde call add_knowledge '{"outcome":"TASK_ID","kind":"decision","content":"CSV over XLSX","provenance":{"source":"caller message 7"},"verified":true}'
-horde call knowledge '{"outcome":"TASK_ID"}'
-horde call link_knowledge '{"outcome":"TASK_ID","source":"KID_A","target":"KID_B","relation":"supports"}'
+horde call add_knowledge '{"task":"TASK_ID","kind":"decision","content":"CSV over XLSX","provenance":{"source":"caller message 7"},"verified":true}'
+horde call knowledge '{"task":"TASK_ID"}'
+horde call link_knowledge '{"task":"TASK_ID","source":"KID_A","target":"KID_B","relation":"supports"}'
 ```
 
 Execution state is never inferred from a knowledge claim or from conversation. A
