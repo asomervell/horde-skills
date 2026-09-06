@@ -53,68 +53,91 @@ a dashboard, a distributed scheduler, a hosted service, or a team-shared instanc
 
 ## Setup
 
-Check for an existing installation before installing anything:
+This is the whole path from nothing to a working Horde. Run it end to end; do not
+hand the user a list of commands to run themselves.
+
+**1. Is it already there?**
 
 ```sh
-horde --version || outcome --version
+horde --version
 ```
 
-If `outcome` is present but `horde` is not, this is a pre-rename installation.
-Run `~/.local/bin/outcome update` once, then use `horde`. Existing configuration,
-data, and service identity are reused. Do not create empty `~/.config/horde` or
-`~/.local/share/horde` directories: legacy paths are only used when the Horde
-equivalents do not exist.
+If that works, skip to step 4.
 
-Fresh install (macOS or Linux; requires Git). Installing a daemon on someone's
-machine is their decision: confirm with the user before running this, and always
-pass an explicit service flag.
+**2. Install.** Installing a daemon on someone's machine is their decision, so
+confirm with the user first. Requires macOS or Linux and Git.
 
 ```sh
 curl -fsSL https://horde.sh/install | bash -s -- --no-service
-horde start
 ```
 
-`--no-service` matters. Without an explicit `--service` or `--no-service`, the
-installer asks whether to start Horde at login, and it falls back to reading
-`/dev/tty` when stdin is not a terminal, which is exactly what `curl | bash` is.
-An agent tool call will block on that prompt with no way to answer it. Pass the
+`--no-service` matters. Without an explicit `--service` or `--no-service` the
+installer asks whether to start Horde at login, and that prompt falls back to
+reading `/dev/tty` when stdin is not a terminal, which is exactly what
+`curl | bash` is. An agent tool call blocks there with no way to answer. Pass the
 flag and the question never happens.
 
-Boot startup is then a separate, reversible step the user can opt into later:
+If the installer says an older installation owns the runtime, see the migration
+note in `references/setup.md`.
+
+Boot startup stays a separate, reversible step the user opts into later:
 
 ```sh
 horde service install     # horde service uninstall to undo
 ```
 
-Then verify the whole scheduling path without spending a single model call:
+**3. Configure an executor.** Horde needs a coding agent to run the work. Check
+what is already on the machine, in this order, and stop at the first hit:
+
+```sh
+command -v codex claude
+```
+
+- **`codex` present and logged in** — nothing to do. The default `planner`,
+  `worker`, and `reviewer` roles are already Codex using its own credential store.
+- **`claude` present** — write `~/.config/horde/config.toml`:
+
+  ```toml
+  [executors.planner]
+  kind = "claude"
+
+  [executors.worker]
+  kind = "claude"
+
+  [executors.reviewer]
+  kind = "claude"
+  ```
+
+- **Neither** — use an API key. Add `auth_mode`, `base_url`, and `api_key_env` to
+  those roles, and export the key in the **daemon's** environment before starting
+  it. See `references/configuration.md`.
+
+**4. Start the daemon.**
+
+```sh
+horde start
+```
+
+Restart it with `horde stop && horde start` after changing any provider API key,
+because the daemon reads keys from its own environment at startup.
+
+**5. Prove it works, for free.**
 
 ```sh
 cd /path/to/a/git/repo
 horde submit "Exercise the runtime" --repo . --template simulated
+horde inspect TASK_ID
 ```
 
-If that returns an id and `horde inspect ID` shows tasks completing, Horde works.
-Only then configure a real executor. See `references/setup.md` for MCP wiring,
-boot services, data directories, and troubleshooting.
+The `simulated` template exercises scheduling, worktrees, and integration with no
+model calls and no cost. If it returns an id and the tasks complete, the runtime
+is sound and any later failure is configuration or the model, not Horde.
 
-## Connect Horde to this agent
+**6. Wire it into this agent** (below), then run a real task.
 
-Add a stdio MCP server so you can submit and monitor without shelling out:
-
-```json
-{
-  "mcpServers": {
-    "horde": { "command": "horde", "args": ["mcp"] }
-  }
-}
-```
-
-This bridge is administrative. Never hand it to an untrusted worker; workers get
-a separate, restricted bridge with a scoped token.
-
-Everything the MCP bridge exposes is also available as `horde call OPERATION 'JSON'`
-with identical arguments and results, so a shell is always a valid fallback. Every
-CLI command prints pretty JSON. Parse it; do not scrape it.
+Confirm each step succeeded before starting the next, and report what actually
+happened. See `references/setup.md` for MCP wiring per agent, data directories,
+migration from a pre-rename installation, and troubleshooting.
 
 ## The loop
 
