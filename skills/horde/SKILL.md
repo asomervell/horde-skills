@@ -65,16 +65,26 @@ data, and service identity are reused. Do not create empty `~/.config/horde` or
 `~/.local/share/horde` directories: legacy paths are only used when the Horde
 equivalents do not exist.
 
-Fresh install (macOS or Linux; requires Git):
+Fresh install (macOS or Linux; requires Git). Installing a daemon on someone's
+machine is their decision: confirm with the user before running this, and always
+pass an explicit service flag.
 
 ```sh
-curl -fsSL https://horde.sh/install | bash
+curl -fsSL https://horde.sh/install | bash -s -- --no-service
 horde start
 ```
 
-The installer verifies the signed release before writing anything and asks whether
-to start Horde at login. In a non-interactive shell it installs only the binary
-unless you pass `--service`.
+`--no-service` matters. Without an explicit `--service` or `--no-service`, the
+installer asks whether to start Horde at login, and it falls back to reading
+`/dev/tty` when stdin is not a terminal, which is exactly what `curl | bash` is.
+An agent tool call will block on that prompt with no way to answer it. Pass the
+flag and the question never happens.
+
+Boot startup is then a separate, reversible step the user can opt into later:
+
+```sh
+horde service install     # horde service uninstall to undo
+```
 
 Then verify the whole scheduling path without spending a single model call:
 

@@ -10,7 +10,7 @@ test environments and Docker-provisioned runtimes.
 ## Install
 
 ```sh
-curl -fsSL https://horde.sh/install | bash
+curl -fsSL https://horde.sh/install | bash -s -- --no-service
 ```
 
 The installer downloads a signed release manifest, verifies its Ed25519 signature
@@ -19,7 +19,14 @@ when that is writable, otherwise it adds `~/.local/bin` to your shell startup fi
 and tells you to open a new terminal. Versioned executables live under
 `~/.local/share/horde-install`.
 
-Non-interactive or pinned:
+Pass `--service` or `--no-service` whenever an agent runs the installer. With
+neither flag the boot-service choice defaults to `ask`, and the prompt is not
+skipped just because stdin is a pipe: the script falls back to writing the
+question to `/dev/tty` and reading the answer from it. Under `curl | bash` in an
+agent tool call that blocks until a human types into the terminal, or until the
+call times out. With an explicit flag the prompt is never reached.
+
+Pinned to a version, or downloaded first so you can read it:
 
 ```sh
 curl -fsSL https://horde.sh/install -o install.sh
